@@ -1,15 +1,21 @@
-// text_chess_full.c
-// 터미널 텍스트 체스 (C, 완전 규칙: 체크/메이트/캐슬링/앙파상/승격)
-// 빌드:   gcc -O2 -std=c11 text_chess_full.c -o text_chess
-// 실행:   ./text_chess
-// 입력예: e2 e4 / g7 g8=Q / O-O / O-O-O / quit
-
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 
 #define BOARD_SIZE 8
+
+// Windows/MSVC용 대체 함수
+int strcasecmp(const char* s1, const char* s2) {
+    while (*s1 && *s2) {
+        char c1 = tolower((unsigned char)*s1++);
+        char c2 = tolower((unsigned char)*s2++);
+        if (c1 != c2) return (c1 - c2);
+    }
+    return (unsigned char)*s1 - (unsigned char)*s2;
+}
+
 
 typedef struct {
     int sr, sc, er, ec;   // start row/col, end row/col (0..7)
@@ -150,7 +156,7 @@ int in_check(Game* g, char side) {
     return square_attacked_by(g, kr, kc, (side == 'w' ? 'b' : 'w'));
 }
 
-// ---------- 이동 생성(슈도레갈) ----------
+// ---------- 이동 생성 ----------
 void push_move(Move* arr, int* n, int sr, int sc, int er, int ec, char promo, int cs, int cl, int ep, char cap) {
     Move m; m.sr = sr; m.sc = sc; m.er = er; m.ec = ec; m.promo = promo; m.castle_short = cs; m.castle_long = cl; m.en_passant = ep; m.captured = cap;
     arr[(*n)++] = m;
@@ -407,15 +413,6 @@ int legal_moves(Game* g, Move* out) {
     return k;
 }
 
-int strcasecmp(const char* s1, const char* s2) {
-    while (*s1 && *s2) {
-        char c1 = tolower((unsigned char)*s1++);
-        char c2 = tolower((unsigned char)*s2++);
-        if (c1 != c2) return (c1 - c2);
-    }
-    return (unsigned char)*s1 - (unsigned char)*s2;
-}
-
 // ---------- 파서 ----------
 int parse_move(Game* g, const char* s, Move* req) {
     // 캐슬
@@ -431,7 +428,7 @@ int parse_move(Game* g, const char* s, Move* req) {
         req->promo = 0; req->castle_short = 0; req->castle_long = 1; req->en_passant = 0; req->captured = '.';
         return 1;
     }
-
+    // "e2 e4" 또는 "e7 e8=Q"
     char a[8] = { 0 }, b[8] = { 0 }, promo = 0;
     if (sscanf(s, "%2s %7s", a, b) != 2) return 0;
     char* eq = strchr(b, '=');
@@ -494,6 +491,7 @@ int main(void) {
 
         printf("%s 수: ", (g.turn == 'w' ? "백" : "흑"));
         if (!fgets(line, sizeof(line), stdin)) break;
+        printf("\n");
         // 공백/개행 정리
         for (size_t i = 0; i < strlen(line); ++i) if (line[i] == '\n' || line[i] == '\r') line[i] = 0;
         if (!strcmp(line, "quit")) { puts("게임 종료."); break; }
