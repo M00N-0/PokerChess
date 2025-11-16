@@ -50,15 +50,17 @@ void PrintBoard(const GameState* gameState) {
 }
 
 void InitializeGame(GameState* gameState) {
+    // 1열/8열: R N B Q K B N R 의 비숍→A, 나이트→J로 변경
+    // 8: 흑 기본 배치, 1: 백 기본 배치
     const char* startPosition[BOARD_SIZE] = {
-        "rnbqkbnr",
-        "pppppppp",
+        "rjaqkajr",   // 8행: r j a q k a j r
+        "pppppppp",   // 7행: 폰 (설명상 2~10 역할)
         "........",
         "........",
         "........",
         "........",
-        "PPPPPPPP",
-        "RNBQKBNR"
+        "PPPPPPPP",   // 2행: 폰 (설명상 2~10 역할)
+        "RJAQKAJR"    // 1행: R J A Q K A J R
     };
 
     int row, column;
@@ -71,7 +73,7 @@ void InitializeGame(GameState* gameState) {
     gameState->currentTurn = 'w';
 }
 
-// ---------- 경로 검사(룩/비숍/퀸용) ----------
+// ---------- 경로 검사(룩/퀸/커스텀용) ----------
 
 int IsPathClearStraight(const GameState* gameState,
     int startRow, int startColumn,
@@ -136,6 +138,7 @@ int IsPathClearDiagonal(const GameState* gameState,
 
 // ---------- 말별 이동 규칙 검사 ----------
 
+// 폰(P/p) : 기본 체스 폰 역할
 int IsLegalPawnMove(const GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn,
@@ -176,40 +179,80 @@ int IsLegalPawnMove(const GameState* gameState,
     return 0;
 }
 
-int IsLegalKnightMove(const GameState* gameState,
+// J/j : 기본 나이트 + 상하좌우 3칸
+int IsLegalJumperMove(const GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn,
     char side)
 {
-    (void)gameState; // 사용하지 않지만 형태 통일을 위해 남김
+    (void)gameState;
+    (void)side;
 
     int rowDifference = endRow - startRow;
     int columnDifference = endColumn - startColumn;
 
-    rowDifference = (rowDifference < 0) ? -rowDifference : rowDifference;
-    columnDifference = (columnDifference < 0) ? -columnDifference : columnDifference;
+    int absRowDifference = (rowDifference < 0) ? -rowDifference : rowDifference;
+    int absColumnDifference = (columnDifference < 0) ? -columnDifference : columnDifference;
 
-    if (!((rowDifference == 2 && columnDifference == 1) ||
-        (rowDifference == 1 && columnDifference == 2))) {
-        return 0;
+    // 기본 나이트 이동
+    if ((absRowDifference == 2 && absColumnDifference == 1) ||
+        (absRowDifference == 1 && absColumnDifference == 2)) {
+        return 1;
     }
 
-    return 1;
+    // 상하좌우 3칸 (점프 가능)
+    if ((absRowDifference == 3 && absColumnDifference == 0) ||
+        (absRowDifference == 0 && absColumnDifference == 3)) {
+        return 1;
+    }
+
+    return 0;
 }
 
-int IsLegalBishopMove(const GameState* gameState,
+// A/a : 주변 5×5 (최대 2칸 이내 어디든, 점프 불가)
+int IsLegalAreaMoverMove(const GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn,
     char side)
 {
-    (void)side; // 색상은 여기서는 사용하지 않지만 형태 통일을 위해 남김
+    (void)side;
 
-    if (!IsPathClearDiagonal(gameState, startRow, startColumn, endRow, endColumn)) {
+    int rowDifference = endRow - startRow;
+    int columnDifference = endColumn - startColumn;
+
+    int absRowDifference = (rowDifference < 0) ? -rowDifference : rowDifference;
+    int absColumnDifference = (columnDifference < 0) ? -columnDifference : columnDifference;
+
+    // 자기 칸은 불가
+    if (absRowDifference == 0 && absColumnDifference == 0) {
         return 0;
     }
+
+    // 5x5 범위 → 최대 2칸 이내
+    if (absRowDifference > 2 || absColumnDifference > 2) {
+        return 0;
+    }
+
+    // 이동 방향이 직선/대각 어느 것이든 허용, 대신 사이에 말이 있으면 안 됨
+    // (킹의 강화판 느낌, 2칸까지 확장 + 점프 불가)
+    int stepRow = (rowDifference == 0) ? 0 : (rowDifference > 0 ? 1 : -1);
+    int stepColumn = (columnDifference == 0) ? 0 : (columnDifference > 0 ? 1 : -1);
+
+    int currentRow = startRow + stepRow;
+    int currentColumn = startColumn + stepColumn;
+
+    while (currentRow != endRow || currentColumn != endColumn) {
+        if (gameState->board[currentRow][currentColumn] != '.') {
+            return 0;
+        }
+        currentRow += stepRow;
+        currentColumn += stepColumn;
+    }
+
     return 1;
 }
 
+// 룩(R/r)
 int IsLegalRookMove(const GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn,
@@ -223,6 +266,7 @@ int IsLegalRookMove(const GameState* gameState,
     return 1;
 }
 
+// 퀸(Q/q)
 int IsLegalQueenMove(const GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn,
@@ -239,6 +283,7 @@ int IsLegalQueenMove(const GameState* gameState,
     return 0;
 }
 
+// 킹(K/k)
 int IsLegalKingMove(const GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn,
@@ -250,11 +295,12 @@ int IsLegalKingMove(const GameState* gameState,
     int rowDifference = endRow - startRow;
     int columnDifference = endColumn - startColumn;
 
-    rowDifference = (rowDifference < 0) ? -rowDifference : rowDifference;
-    columnDifference = (columnDifference < 0) ? -columnDifference : columnDifference;
+    int absRowDifference = (rowDifference < 0) ? -rowDifference : rowDifference;
+    int absColumnDifference = (columnDifference < 0) ? -columnDifference : columnDifference;
 
     // 한 칸 이내로만 이동
-    if (rowDifference <= 1 && columnDifference <= 1 && !(rowDifference == 0 && columnDifference == 0)) {
+    if (absRowDifference <= 1 && absColumnDifference <= 1 &&
+        !(absRowDifference == 0 && absColumnDifference == 0)) {
         return 1;
     }
     return 0;
@@ -294,32 +340,32 @@ int IsLegalMove(const GameState* gameState,
     char lowerPiece = (char)tolower((unsigned char)movingPiece);
 
     switch (lowerPiece) {
-    case 'p':
+    case 'p':   // 폰: 2~10 말의 역할이라고 보면 됨
         if (!IsLegalPawnMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
             return 0;
         }
         break;
-    case 'n':
-        if (!IsLegalKnightMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
+    case 'j':   // J : 나이트 + 상하좌우 3칸 점프
+        if (!IsLegalJumperMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
             return 0;
         }
         break;
-    case 'b':
-        if (!IsLegalBishopMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
+    case 'a':   // A : 주변 5x5 (최대 2칸), 점프 불가
+        if (!IsLegalAreaMoverMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
             return 0;
         }
         break;
-    case 'r':
+    case 'r':   // 룩
         if (!IsLegalRookMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
             return 0;
         }
         break;
-    case 'q':
+    case 'q':   // 퀸
         if (!IsLegalQueenMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
             return 0;
         }
         break;
-    case 'k':
+    case 'k':   // 킹
         if (!IsLegalKingMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
             return 0;
         }
@@ -368,10 +414,16 @@ int main(void) {
 
     InitializeGame(&gameState);
 
-    printf("=== 텍스트 체스 (단순 버전, C) ===\n");
+    printf("=== 커스텀 텍스트 체스 ===\n");
     printf("백: 대문자 / 흑: 소문자\n");
-    printf("입력 예) e2 e4  /  g7 g8  /  quit\n");
-    printf("※ 체크, 체크메이트, 캐슬링, 앙파상은 구현하지 않았습니다.\n\n");
+    printf("말 규칙:\n");
+    printf("  R/r : 룩 (기본 체스와 동일)\n");
+    printf("  A/a : 주변 5x5 범위(최대 2칸) 이동, 점프 불가\n");
+    printf("  J/j : 나이트 이동 + 상/하/좌/우 3칸 점프 이동\n");
+    printf("  P/p : 기본 체스 폰 역할 (설정상 2~10 말 나중에 수정하겠습니다.)\n");
+    printf("  Q/q : 퀸, K/k : 킹 (기본 체스와 동일)\n");
+    printf("체크, 체크메이트, 캐슬링, 앙파상은 구현하지 않았습니다.\n\n");
+    printf("입력 예) e2 e4  /  g7 g5  /  quit\n\n");
 
     while (1) {
         PrintBoard(&gameState);

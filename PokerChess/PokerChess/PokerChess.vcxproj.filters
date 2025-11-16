@@ -18,13 +18,8 @@
     <ClCompile Include="Main.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="MovementPart.c">
+    <ClCompile Include="PokerChess.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="MovementPart.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
