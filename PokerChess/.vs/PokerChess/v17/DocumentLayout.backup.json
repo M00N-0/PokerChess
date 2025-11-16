@@ -1,9 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\aiden\\OneDrive\\\uBB38\uC11C\\GitHub\\PokerChess\\PokerChess\\",
+  "WorkspaceRootPath": "C:\\Users\\songm\\Desktop\\Pokerchess\\PokerChess\\PokerChess\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{8806FAC7-3EBC-4374-B011-4B10A0C1FD21}|PokerChess\\PokerChess.vcxproj|C:\\Users\\aiden\\OneDrive\\\uBB38\uC11C\\GitHub\\PokerChess\\PokerChess\\PokerChess\\Main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{8806FAC7-3EBC-4374-B011-4B10A0C1FD21}|PokerChess\\PokerChess.vcxproj|C:\\Users\\songm\\Desktop\\Pokerchess\\PokerChess\\PokerChess\\PokerChess\\Main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{8806FAC7-3EBC-4374-B011-4B10A0C1FD21}|PokerChess\\PokerChess.vcxproj|solutionrelative:PokerChess\\Main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
@@ -20,11 +20,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "Main.c",
-              "DocumentMoniker": "C:\\Users\\aiden\\OneDrive\\\uBB38\uC11C\\GitHub\\PokerChess\\PokerChess\\PokerChess\\Main.c",
+              "DocumentMoniker": "C:\\Users\\songm\\Desktop\\Pokerchess\\PokerChess\\PokerChess\\PokerChess\\Main.c",
               "RelativeDocumentMoniker": "PokerChess\\Main.c",
-              "ToolTip": "C:\\Users\\aiden\\OneDrive\\\uBB38\uC11C\\GitHub\\PokerChess\\PokerChess\\PokerChess\\Main.c",
+              "ToolTip": "C:\\Users\\songm\\Desktop\\Pokerchess\\PokerChess\\PokerChess\\PokerChess\\Main.c",
               "RelativeToolTip": "PokerChess\\Main.c",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
               "WhenOpened": "2025-11-01T13:37:46.904Z",
               "EditorCaption": ""
