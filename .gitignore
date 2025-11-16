@@ -1,3 +1,14 @@
+# Visual Studio
+.vs/
+*.suo
+*.VC.db
+*.db
+Debug/
+Release/
+*.exe
+*.obj
+*.pdb
+
 # Prerequisites
 *.d
 
