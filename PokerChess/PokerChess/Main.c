@@ -1,471 +1,48 @@
-#define _CRT_SECURE_NO_WARNINGS
+ï»¿#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
-#include <windows.h>
-
-#define BOARD_SIZE 8
-
-// ÄÜ¼Ö ÇÚµé (»ö»ó Ãâ·Â¿ë)
-HANDLE hConsole;
-
-typedef struct {
-    char board[BOARD_SIZE][BOARD_SIZE];  // '.' ºóÄ­, ¹é: ´ë¹®ÀÚ, Èæ: ¼Ò¹®ÀÚ
-    char currentTurn;                    // 'w' ¶Ç´Â 'b'
-} GameState;
-
-// ---------- »ö»ó À¯Æ¿ ----------
-
-void SetColor(int text, int background)
-{
-    SetConsoleTextAttribute(hConsole, text + (background << 4));
-}
-
-// ---------- À¯Æ¿ ÇÔ¼ö ----------
-
-int IsInsideBoard(int row, int column) {
-    return row >= 0 && row < BOARD_SIZE && column >= 0 && column < BOARD_SIZE;
-}
-
-int IsWhitePiece(char piece) {
-    return (piece >= 'A' && piece <= 'Z');
-}
-
-int IsBlackPiece(char piece) {
-    return (piece >= 'a' && piece <= 'z');
-}
-
-char GetPieceSide(char piece) {
-    if (piece == '.') return 0;
-    return IsWhitePiece(piece) ? 'w' : 'b';
-}
-
-void ConvertAlgebraicToIndex(const char* square, int* row, int* column) {
-    // square ¿¹: "e2"
-    *column = tolower(square[0]) - 'a';
-    *row = 8 - (square[1] - '0');
-}
-
-void PrintBoard(const GameState* gameState) {
-    int row, column;
-
-    printf("  a b c d e f g h\n");
-    for (row = 0; row < BOARD_SIZE; row++) {
-        printf("%d ", 8 - row);
-        for (column = 0; column < BOARD_SIZE; column++) {
-
-            int isWhiteSquare = ((row + column) % 2 == 0);
-            if (isWhiteSquare)
-                SetColor(0, 15);   // ±ÛÀÚ °ËÁ¤, ¹è°æ Èò»ö
-            else
-                SetColor(15, 0);   // ±ÛÀÚ Èò»ö, ¹è°æ °ËÁ¤
-
-            printf("%c ", gameState->board[row][column]);
-
-            SetColor(15, 0); // ±âº»»ö ¸®¼Â
-        }
-        printf("%d\n", 8 - row);
-    }
-    printf("  a b c d e f g h\n\n");
-}
-
-void InitializeGame(GameState* gameState) {
-    // 1¿­/8¿­: R N B Q K B N R ÀÇ ºñ¼ó¡æA, ³ªÀÌÆ®¡æJ·Î º¯°æ
-    // 8: Èæ ±âº» ¹èÄ¡, 1: ¹é ±âº» ¹èÄ¡
-    const char* startPosition[BOARD_SIZE] = {
-        "rjaqkajr",   // 8Çà: r j a q k a j r
-        "pppppppp",   // 7Çà: Æù (¼³¸í»ó 2~10 ¿ªÇÒ)
-        "........",
-        "........",
-        "........",
-        "........",
-        "PPPPPPPP",   // 2Çà: Æù (¼³¸í»ó 2~10 ¿ªÇÒ)
-        "RJAQKAJR"    // 1Çà: R J A Q K A J R
-    };
-
-    int row, column;
-    for (row = 0; row < BOARD_SIZE; row++) {
-        for (column = 0; column < BOARD_SIZE; column++) {
-            gameState->board[row][column] = startPosition[row][column];
-        }
-    }
-
-    gameState->currentTurn = 'w';
-}
-
-// ---------- °æ·Î °Ë»ç(·è/Äı/Ä¿½ºÅÒ¿ë) ----------
-
-int IsPathClearStraight(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn)
-{
-    int rowStep = 0;
-    int columnStep = 0;
-    int row, column;
-
-    if (startRow == endRow) {
-        columnStep = (endColumn > startColumn) ? 1 : -1;
-        for (column = startColumn + columnStep; column != endColumn; column += columnStep) {
-            if (gameState->board[startRow][column] != '.') {
-                return 0;
-            }
-        }
-        return 1;
-    }
-    else if (startColumn == endColumn) {
-        rowStep = (endRow > startRow) ? 1 : -1;
-        for (row = startRow + rowStep; row != endRow; row += rowStep) {
-            if (gameState->board[row][startColumn] != '.') {
-                return 0;
-            }
-        }
-        return 1;
-    }
-
-    return 0; // Á÷¼±ÀÌ ¾Æ´Ï¸é ¿©±â ¿ÀÁö ¾ÊÀ½
-}
-
-int IsPathClearDiagonal(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn)
-{
-    int rowDifference = endRow - startRow;
-    int columnDifference = endColumn - startColumn;
-
-    if (rowDifference == 0 || columnDifference == 0) {
-        return 0; // ´ë°¢¼±ÀÌ ¾Æ´Ô
-    }
-    if (rowDifference * rowDifference != columnDifference * columnDifference) {
-        return 0; // |rowDifference| != |columnDifference| °æ¿ì
-    }
-
-    int rowStep = (rowDifference > 0) ? 1 : -1;
-    int columnStep = (columnDifference > 0) ? 1 : -1;
-
-    int row = startRow + rowStep;
-    int column = startColumn + columnStep;
-
-    while (row != endRow && column != endColumn) {
-        if (gameState->board[row][column] != '.') {
-            return 0;
-        }
-        row += rowStep;
-        column += columnStep;
-    }
-
-    return 1;
-}
-
-// ---------- ¸»º° ÀÌµ¿ ±ÔÄ¢ °Ë»ç ----------
-
-// Æù(P/p) : ±âº» Ã¼½º Æù ¿ªÇÒ
-int IsLegalPawnMove(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn,
-    char side)
-{
-    int direction = (side == 'w') ? -1 : 1;      // ¹éÀº À§·Î(-1), ÈæÀº ¾Æ·¡·Î(+1)
-    int startRowForPawn = (side == 'w') ? 6 : 1; // ¹é Æù ½ÃÀÛÇà 6, Èæ Æù ½ÃÀÛÇà 1
-
-    char targetPiece = gameState->board[endRow][endColumn];
-
-    int rowDifference = endRow - startRow;
-    int columnDifference = endColumn - startColumn;
-
-    // 1) ÀüÁø(¾ÕÀ¸·Î¸¸, °°Àº ÆÄÀÏ)
-    if (columnDifference == 0) {
-        // ÇÑ Ä­ ÀüÁø
-        if (rowDifference == direction && targetPiece == '.') {
-            return 1;
-        }
-        // Ã¹ ½ÃÀÛ À§Ä¡¿¡¼­ µÎ Ä­ ÀüÁø
-        if (startRow == startRowForPawn &&
-            rowDifference == 2 * direction &&
-            targetPiece == '.' &&
-            gameState->board[startRow + direction][startColumn] == '.')
-        {
-            return 1;
-        }
-        return 0;
-    }
-
-    // 2) ´ë°¢¼±À¸·Î ÇÑ Ä­ ÀÌµ¿ÇÏ¸ç Àâ±â
-    if (rowDifference == direction && (columnDifference == 1 || columnDifference == -1)) {
-        if (targetPiece != '.' && GetPieceSide(targetPiece) != side) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-// J/j : ±âº» ³ªÀÌÆ® + »óÇÏÁÂ¿ì 3Ä­
-int IsLegalJumperMove(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn,
-    char side)
-{
-    (void)gameState;
-    (void)side;
-
-    int rowDifference = endRow - startRow;
-    int columnDifference = endColumn - startColumn;
-
-    int absRowDifference = (rowDifference < 0) ? -rowDifference : rowDifference;
-    int absColumnDifference = (columnDifference < 0) ? -columnDifference : columnDifference;
-
-    // ±âº» ³ªÀÌÆ® ÀÌµ¿
-    if ((absRowDifference == 2 && absColumnDifference == 1) ||
-        (absRowDifference == 1 && absColumnDifference == 2)) {
-        return 1;
-    }
-
-    // »óÇÏÁÂ¿ì 3Ä­ (Á¡ÇÁ °¡´É)
-    if ((absRowDifference == 3 && absColumnDifference == 0) ||
-        (absRowDifference == 0 && absColumnDifference == 3)) {
-        return 1;
-    }
-
-    return 0;
-}
-
-// A/a : ÁÖº¯ 5¡¿5 (ÃÖ´ë 2Ä­ ÀÌ³» ¾îµğµç, Á¡ÇÁ ºÒ°¡)
-int IsLegalAreaMoverMove(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn,
-    char side)
-{
-    (void)side;
-
-    int rowDifference = endRow - startRow;
-    int columnDifference = endColumn - startColumn;
-
-    int absRowDifference = (rowDifference < 0) ? -rowDifference : rowDifference;
-    int absColumnDifference = (columnDifference < 0) ? -columnDifference : columnDifference;
-
-    // ÀÚ±â Ä­Àº ºÒ°¡
-    if (absRowDifference == 0 && absColumnDifference == 0) {
-        return 0;
-    }
-
-    // 5x5 ¹üÀ§ ¡æ ÃÖ´ë 2Ä­ ÀÌ³»
-    if (absRowDifference > 2 || absColumnDifference > 2) {
-        return 0;
-    }
-
-    // ÀÌµ¿ ¹æÇâÀÌ Á÷¼±/´ë°¢ ¾î´À °ÍÀÌµç Çã¿ë, ´ë½Å »çÀÌ¿¡ ¸»ÀÌ ÀÖÀ¸¸é ¾È µÊ
-    // (Å·ÀÇ °­È­ÆÇ ´À³¦, 2Ä­±îÁö È®Àå + Á¡ÇÁ ºÒ°¡)
-    int stepRow = (rowDifference == 0) ? 0 : (rowDifference > 0 ? 1 : -1);
-    int stepColumn = (columnDifference == 0) ? 0 : (columnDifference > 0 ? 1 : -1);
-
-    int currentRow = startRow + stepRow;
-    int currentColumn = startColumn + stepColumn;
-
-    while (currentRow != endRow || currentColumn != endColumn) {
-        if (gameState->board[currentRow][currentColumn] != '.') {
-            return 0;
-        }
-        currentRow += stepRow;
-        currentColumn += stepColumn;
-    }
-
-    return 1;
-}
-
-// ·è(R/r)
-int IsLegalRookMove(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn,
-    char side)
-{
-    (void)side; // »ö»óÀº ¿©±â¼­´Â »ç¿ëÇÏÁö ¾ÊÁö¸¸ ÇüÅÂ ÅëÀÏÀ» À§ÇØ ³²±è
-
-    if (!IsPathClearStraight(gameState, startRow, startColumn, endRow, endColumn)) {
-        return 0;
-    }
-    return 1;
-}
-
-// Äı(Q/q)
-int IsLegalQueenMove(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn,
-    char side)
-{
-    (void)side; // »ö»óÀº ¿©±â¼­´Â »ç¿ëÇÏÁö ¾ÊÁö¸¸ ÇüÅÂ ÅëÀÏÀ» À§ÇØ ³²±è
-
-    if (IsPathClearStraight(gameState, startRow, startColumn, endRow, endColumn)) {
-        return 1;
-    }
-    if (IsPathClearDiagonal(gameState, startRow, startColumn, endRow, endColumn)) {
-        return 1;
-    }
-    return 0;
-}
-
-// Å·(K/k)
-int IsLegalKingMove(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn,
-    char side)
-{
-    (void)gameState;
-    (void)side;
-
-    int rowDifference = endRow - startRow;
-    int columnDifference = endColumn - startColumn;
-
-    int absRowDifference = (rowDifference < 0) ? -rowDifference : rowDifference;
-    int absColumnDifference = (columnDifference < 0) ? -columnDifference : columnDifference;
-
-    // ÇÑ Ä­ ÀÌ³»·Î¸¸ ÀÌµ¿
-    if (absRowDifference <= 1 && absColumnDifference <= 1 &&
-        !(absRowDifference == 0 && absColumnDifference == 0)) {
-        return 1;
-    }
-    return 0;
-}
-
-// ---------- ÀüÃ¼ ÀÌµ¿ ÇÕ¹ı¼º °Ë»ç ----------
-
-int IsLegalMove(const GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn)
-{
-    if (!IsInsideBoard(startRow, startColumn) || !IsInsideBoard(endRow, endColumn)) {
-        return 0;
-    }
-
-    char movingPiece = gameState->board[startRow][startColumn];
-    char targetPiece = gameState->board[endRow][endColumn];
-
-    if (movingPiece == '.') {
-        printf("Ãâ¹ß Ä­¿¡ ¸»ÀÌ ¾ø½À´Ï´Ù.\n");
-        return 0;
-    }
-
-    char movingSide = GetPieceSide(movingPiece);
-
-    if (movingSide != gameState->currentTurn) {
-        printf("ÇöÀç Â÷·ÊÀÇ ¸»ÀÌ ¾Æ´Õ´Ï´Ù.\n");
-        return 0;
-    }
-
-    if (targetPiece != '.' && GetPieceSide(targetPiece) == movingSide) {
-        printf("ÀÚ±â ¸»ÀÌ ÀÖ´Â Ä­À¸·Î´Â ÀÌµ¿ÇÒ ¼ö ¾ø½À´Ï´Ù.\n");
-        return 0;
-    }
-
-    // ¸» Á¾·ù¿¡ µû¸¥ ±ÔÄ¢ ºĞ±â
-    char lowerPiece = (char)tolower((unsigned char)movingPiece);
-
-    switch (lowerPiece) {
-    case 'p':   // Æù: 2~10 ¸»ÀÇ ¿ªÇÒÀÌ¶ó°í º¸¸é µÊ
-        if (!IsLegalPawnMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
-            return 0;
-        }
-        break;
-    case 'j':   // J : ³ªÀÌÆ® + »óÇÏÁÂ¿ì 3Ä­ Á¡ÇÁ
-        if (!IsLegalJumperMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
-            return 0;
-        }
-        break;
-    case 'a':   // A : ÁÖº¯ 5x5 (ÃÖ´ë 2Ä­), Á¡ÇÁ ºÒ°¡
-        if (!IsLegalAreaMoverMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
-            return 0;
-        }
-        break;
-    case 'r':   // ·è
-        if (!IsLegalRookMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
-            return 0;
-        }
-        break;
-    case 'q':   // Äı
-        if (!IsLegalQueenMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
-            return 0;
-        }
-        break;
-    case 'k':   // Å·
-        if (!IsLegalKingMove(gameState, startRow, startColumn, endRow, endColumn, movingSide)) {
-            return 0;
-        }
-        break;
-    default:
-        return 0;
-    }
-
-    return 1;
-}
-
-// ---------- ½ÇÁ¦ ¸» ÀÌµ¿ Àû¿ë ----------
-
-void ApplyMove(GameState* gameState,
-    int startRow, int startColumn,
-    int endRow, int endColumn)
-{
-    char movingPiece = gameState->board[startRow][startColumn];
-    char lowerPiece = (char)tolower((unsigned char)movingPiece);
-
-    // ÀÌµ¿
-    gameState->board[endRow][endColumn] = movingPiece;
-    gameState->board[startRow][startColumn] = '.';
-
-    // ÆùÀÌ ¸¶Áö¸· rank¿¡ µµ´ŞÇÏ¸é ÀÚµ¿ Äı ½Â°İ
-    if (lowerPiece == 'p') {
-        if (endRow == 0 || endRow == 7) {
-            if (IsWhitePiece(movingPiece)) {
-                gameState->board[endRow][endColumn] = 'Q';
-            }
-            else {
-                gameState->board[endRow][endColumn] = 'q';
-            }
-        }
-    }
-
-    // ÅÏ º¯°æ
-    gameState->currentTurn = (gameState->currentTurn == 'w') ? 'b' : 'w';
-}
-
-// ---------- ¸ŞÀÎ ----------
+#include "game.h"
+#include "card.h"
+#include "check.h"
 
 int main(void) {
     GameState gameState;
     char inputLine[128];
 
-    // ÄÜ¼Ö ÇÚµé ÃÊ±âÈ­ (»ö»ó Ãâ·Â¿ë)
-    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
+    InitConsole();
     InitializeGame(&gameState);
 
-    printf("=== Ä¿½ºÅÒ ÅØ½ºÆ® Ã¼½º ===\n");
-    printf("¹é: ´ë¹®ÀÚ / Èæ: ¼Ò¹®ÀÚ\n");
-    printf("¸» ±ÔÄ¢:\n");
-    printf("  R/r : ·è (±âº» Ã¼½º¿Í µ¿ÀÏ)\n");
-    printf("  A/a : ÁÖº¯ 5x5 ¹üÀ§(ÃÖ´ë 2Ä­) ÀÌµ¿, Á¡ÇÁ ºÒ°¡\n");
-    printf("  J/j : ³ªÀÌÆ® ÀÌµ¿ + »ó/ÇÏ/ÁÂ/¿ì 3Ä­ Á¡ÇÁ ÀÌµ¿\n");
-    printf("  P/p : ±âº» Ã¼½º Æù ¿ªÇÒ (¼³Á¤»ó 2~10 ¸» ³ªÁß¿¡ ¼öÁ¤ÇÏ°Ú½À´Ï´Ù.)\n");
-    printf("  Q/q : Äı, K/k : Å· (±âº» Ã¼½º¿Í µ¿ÀÏ)\n");
-    printf("Ã¼Å©, Ã¼Å©¸ŞÀÌÆ®, Ä³½½¸µ, ¾ÓÆÄ»óÀº ±¸ÇöÇÏÁö ¾Ê¾Ò½À´Ï´Ù.\n\n");
-    printf("ÀÔ·Â ¿¹) e2 e4  /  g7 g5  /  quit\n\n");
+    printf("=== í¬ì»¤ ì¹´ë“œ ê¸°ë°˜ í…ìŠ¤íŠ¸ ì²´ìŠ¤ ===\n\n");
 
     while (1) {
         PrintBoard(&gameState);
 
-        printf("%s Â÷·ÊÀÔ´Ï´Ù. ¼ö¸¦ ÀÔ·ÂÇÏ¼¼¿ä: ",
-            (gameState.currentTurn == 'w') ? "¹é" : "Èæ");
+        // í„´ ì‹œì‘ ì‹œ ì²´í¬/ì²´í¬ë©”ì´íŠ¸ ìƒíƒœ í™•ì¸
+        if (IsInCheck(&gameState, gameState.currentTurn)) {
+            if (IsCheckmate(&gameState)) {
+                printf("\n### ì²´í¬ë©”ì´íŠ¸! %s ìŠ¹ë¦¬! ###\n",
+                    (gameState.currentTurn == 'w') ? "í‘" : "ë°±");
+                break;
+            }
+            printf("\nì²´í¬ ìƒíƒœì…ë‹ˆë‹¤\n");
+        }
+
+        printf("%s ì°¨ë¡€ì…ë‹ˆë‹¤. ìˆ˜ë¥¼ ì…ë ¥í•˜ì„¸ìš”: ",
+            (gameState.currentTurn == 'w') ? "ë°±" : "í‘");
 
         if (!fgets(inputLine, sizeof(inputLine), stdin)) {
             break;
         }
 
-        // °³Çà Á¦°Å
+        // ê°œí–‰ ì œê±°
         size_t length = strlen(inputLine);
-        if (length > 0 && (inputLine[length - 1] == '\n' || inputLine[length - 1] == '\r')) {
+        if (length > 0 &&
+            (inputLine[length - 1] == '\n' || inputLine[length - 1] == '\r')) {
             inputLine[length - 1] = '\0';
         }
 
         if (strcmp(inputLine, "quit") == 0) {
-            printf("°ÔÀÓÀ» Á¾·áÇÕ´Ï´Ù.\n");
+            printf("ê²Œì„ì„ ì¢…ë£Œí•©ë‹ˆë‹¤.\n");
             break;
         }
 
@@ -477,7 +54,7 @@ int main(void) {
         char toSquare[4] = { 0 };
 
         if (sscanf(inputLine, "%2s %2s", fromSquare, toSquare) != 2) {
-            printf("ÀÔ·Â Çü½ÄÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù. (¿¹: e2 e4)\n\n");
+            printf("ì…ë ¥ í˜•ì‹ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤. (ì˜ˆ: e2 e4)\n\n");
             continue;
         }
 
@@ -485,11 +62,30 @@ int main(void) {
         ConvertAlgebraicToIndex(fromSquare, &startRow, &startColumn);
         ConvertAlgebraicToIndex(toSquare, &endRow, &endColumn);
 
-        if (!IsLegalMove(&gameState, startRow, startColumn, endRow, endColumn)) {
-            printf("ÇÕ¹ıÀûÀÎ ¼ö°¡ ¾Æ´Õ´Ï´Ù.\n\n");
+        Card* moving = gameState.board[startRow][startColumn];
+        if (!moving) {
+            printf("ì¶œë°œ ìœ„ì¹˜ì— ì¹´ë“œê°€ ì—†ìŠµë‹ˆë‹¤.\n\n");
             continue;
         }
 
+        if (moving->side != gameState.currentTurn) {
+            printf("í˜„ì¬ ì°¨ë¡€ì˜ ì¹´ë“œê°€ ì•„ë‹™ë‹ˆë‹¤.\n\n");
+            continue;
+        }
+
+        // ìˆœìˆ˜ ê·œì¹™ìƒ ì´ë™ ê°€ëŠ¥?
+        if (!CanCardMove(&gameState, startRow, startColumn, endRow, endColumn)) {
+            printf("ê·œì¹™ìƒ ë¶ˆê°€ëŠ¥í•œ ì´ë™ì…ë‹ˆë‹¤.\n\n");
+            continue;
+        }
+
+        // ìì‚´ìˆ˜ ì²´í¬
+        if (IsMovePuttingSelfInCheck(&gameState, startRow, startColumn, endRow, endColumn)) {
+            printf("ìì‹ ì˜ ì™•ì„ ì²´í¬ ìƒíƒœë¡œ ë§Œë“œëŠ” ìˆ˜ëŠ” ë‘˜ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\n\n");
+            continue;
+        }
+
+        // ì‹¤ì œ ì´ë™ ì ìš©
         ApplyMove(&gameState, startRow, startColumn, endRow, endColumn);
         printf("\n");
     }

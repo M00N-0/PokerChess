@@ -18,5 +18,25 @@
     <ClCompile Include="Main.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Card.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Check.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Card.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Check.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
