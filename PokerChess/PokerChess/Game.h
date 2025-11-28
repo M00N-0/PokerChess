@@ -10,28 +10,32 @@
 typedef struct GameState {
     Card* board[BOARD_SIZE][BOARD_SIZE];
     char currentTurn;  // 'w' or 'b'
+
+    int whiteTime;     // ë°± ë‚¨ì€ ì‹œê°„(sec)
+    int blackTime;     // í‘ ë‚¨ì€ ì‹œê°„(sec)
 } GameState;
 
-// ÄÜ¼Ö ÇÚµé (»ö»ó Ãâ·Â¿ë)
+
+// ì½˜ì†” í•¸ë“¤ (ìƒ‰ìƒ ì¶œë ¥ìš©)
 extern HANDLE hConsole;
 
-// ÄÜ¼Ö ÃÊ±âÈ­
+// ì½˜ì†” ì´ˆê¸°í™”
 void InitConsole();
 
-// °ø¿ë À¯Æ¿
+// ê³µìš© ìœ í‹¸
 int IsInsideBoard(int row, int column);
 void ConvertAlgebraicToIndex(const char* square, int* row, int* column);
 
-// °ÔÀÓ ÃÊ±âÈ­ ¹× Ãâ·Â
+// ê²Œì„ ì´ˆê¸°í™” ë° ì¶œë ¥
 void InitializeGame(GameState* gameState);
 void PrintBoard(const GameState* gameState);
 
-// ÀÌµ¿ Àû¿ë (°ËÁõÀº ¹Û¿¡¼­ ÀÌ¹Ì Çß´Ù´Â °¡Á¤)
+// ì´ë™ ì ìš© (ê²€ì¦ì€ ë°–ì—ì„œ ì´ë¯¸ í–ˆë‹¤ëŠ” ê°€ì •)
 void ApplyMove(GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn);
 
-// Ä«µå »ö (side) °¡Á®¿À±â
+// ì¹´ë“œ ìƒ‰ (side) ê°€ì ¸ì˜¤ê¸°
 char GetCardSide(const Card* c);
 
 #endif
