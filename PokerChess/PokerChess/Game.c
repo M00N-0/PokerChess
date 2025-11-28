@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 
-HANDLE hConsole;  // Àü¿ª ÄÜ¼Ö ÇÚµé
+HANDLE hConsole;  // ì „ì—­ ì½˜ì†” í•¸ë“¤
 
 void InitConsole() {
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -30,20 +30,24 @@ char GetCardSide(const Card* c) {
     return c->side;
 }
 
-// ÃÊ±â ¹èÄ¡:
-// row 0,1 : Èæ ('b')
-// row 6,7 : ¹é ('w')
-// row 0,7 : K/Q °íÁ¤ À§Ä¡, ³ª¸ÓÁö´Â ·£´ı
-// row 1,6 : ÀüºÎ ·£´ı
+// ì´ˆê¸° ë°°ì¹˜:
+// row 0,1 : í‘ ('b')
+// row 6,7 : ë°± ('w')
+// row 0,7 : K/Q ê³ ì • ìœ„ì¹˜, ë‚˜ë¨¸ì§€ëŠ” ëœë¤
+// row 1,6 : ì „ë¶€ ëœë¤
 void InitializeGame(GameState* gameState) {
-    // ÀüºÎ NULL ÃÊ±âÈ­
+    // íƒ€ì´ë¨¸ ì´ˆê¸°íšŒ
+    gameState->whiteTime = 30; // 30ì´ˆ
+    gameState->blackTime = 30;
+
+    // ì „ë¶€ NULL ì´ˆê¸°í™”
     for (int r = 0; r < BOARD_SIZE; r++) {
         for (int c = 0; c < BOARD_SIZE; c++) {
             gameState->board[r][c] = NULL;
         }
     }
 
-    // Èæ(back rank) row 0
+    // í‘(back rank) row 0
     for (int c = 0; c < BOARD_SIZE; c++) {
         if (c == 3) {
             gameState->board[0][c] = CreateFixedCard('b', 12); // Q
@@ -56,17 +60,17 @@ void InitializeGame(GameState* gameState) {
         }
     }
 
-    // Èæ second rank row 1
+    // í‘ second rank row 1
     for (int c = 0; c < BOARD_SIZE; c++) {
         gameState->board[1][c] = CreateRandomCard('b');
     }
 
-    // ¹é second rank row 6
+    // ë°± second rank row 6
     for (int c = 0; c < BOARD_SIZE; c++) {
         gameState->board[6][c] = CreateRandomCard('w');
     }
 
-    // ¹é back rank row 7
+    // ë°± back rank row 7
     for (int c = 0; c < BOARD_SIZE; c++) {
         if (c == 3) {
             gameState->board[7][c] = CreateFixedCard('w', 12); // Q
@@ -82,7 +86,7 @@ void InitializeGame(GameState* gameState) {
     gameState->currentTurn = 'w';
 }
 
-// º¸µå Ãâ·Â (»ö»ó Æ÷ÇÔ)
+// ë³´ë“œ ì¶œë ¥ (ìƒ‰ìƒ í¬í•¨)
 void PrintBoard(const GameState* gameState) {
     printf("    a    b    c    d    e    f    g    h\n");
     for (int row = 0; row < BOARD_SIZE; row++) {
@@ -90,22 +94,22 @@ void PrintBoard(const GameState* gameState) {
         for (int col = 0; col < BOARD_SIZE; col++) {
             int isWhiteSquare = ((row + col) % 2 == 0);
             if (isWhiteSquare)
-                SetColor(0, 15);  // °ËÁ¤»ö ±ÛÀÚ, Èò»ö ¹è°æ
+                SetColor(0, 15);  // ê²€ì •ìƒ‰ ê¸€ì, í°ìƒ‰ ë°°ê²½
             else
-                SetColor(15, 0);  // Èò»ö ±ÛÀÚ, °ËÁ¤»ö ¹è°æ
+                SetColor(15, 0);  // í°ìƒ‰ ê¸€ì, ê²€ì •ìƒ‰ ë°°ê²½
 
             printf(" ");
             PrintCard(gameState->board[row][col]);
             printf(" ");
 
-            SetColor(15, 0); // ±âº»»ö º¹±¸
+            SetColor(15, 0); // ê¸°ë³¸ìƒ‰ ë³µêµ¬
         }
         printf(" %d\n", 8 - row);
     }
     printf("    a    b    c    d    e    f    g    h\n\n");
 }
 
-// ÀÌµ¿ Àû¿ë (°ËÁõÀº ¹Û¿¡¼­ ³¡³­ »óÅÂ)
+// ì´ë™ ì ìš© (ê²€ì¦ì€ ë°–ì—ì„œ ëë‚œ ìƒíƒœ)
 void ApplyMove(GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn) {
@@ -114,6 +118,6 @@ void ApplyMove(GameState* gameState,
     gameState->board[endRow][endColumn] = moving;
     gameState->board[startRow][startColumn] = NULL;
 
-    // ÅÏ ±³´ë
+    // í„´ êµëŒ€
     gameState->currentTurn = (gameState->currentTurn == 'w') ? 'b' : 'w';
 }
