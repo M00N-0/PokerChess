@@ -123,15 +123,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Card.c" />
-    <ClCompile Include="Check.c" />
-    <ClCompile Include="Game.c" />
-    <ClCompile Include="Main.c" />
+    <ClCompile Include="card.c" />
+    <ClCompile Include="check.c" />
+    <ClCompile Include="game.c" />
+    <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Card.h" />
-    <ClInclude Include="Check.h" />
-    <ClInclude Include="Game.h" />
+    <ClInclude Include="card.h" />
+    <ClInclude Include="check.h" />
+    <ClInclude Include="game.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

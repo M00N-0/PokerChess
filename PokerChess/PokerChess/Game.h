@@ -10,13 +10,19 @@
 typedef struct GameState {
     Card* board[BOARD_SIZE][BOARD_SIZE];
     char currentTurn;  // 'w' or 'b'
+
+    int whiteTime;     // 백 남은 시간(sec)
+    int blackTime;     // 흑 남은 시간(sec)
 } GameState;
+
 
 // 콘솔 핸들 (색상 출력용)
 extern HANDLE hConsole;
 
 // 콘솔 초기화
 void InitConsole();
+
+void SetColor(int text, int background);
 
 // 공용 유틸
 int IsInsideBoard(int row, int column);
@@ -26,7 +32,7 @@ void ConvertAlgebraicToIndex(const char* square, int* row, int* column);
 void InitializeGame(GameState* gameState);
 void PrintBoard(const GameState* gameState);
 
-// 이동 적용 (검증은 밖에서 이미 했다는 가정)
+// 이동 적용
 void ApplyMove(GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn);

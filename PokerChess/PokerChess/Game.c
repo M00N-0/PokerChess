@@ -11,7 +11,7 @@ void InitConsole() {
     srand((unsigned int)time(NULL));
 }
 
-static void SetColor(int text, int background) {
+void SetColor(int text, int background) {
     SetConsoleTextAttribute(hConsole, text + (background << 4));
 }
 
@@ -36,6 +36,10 @@ char GetCardSide(const Card* c) {
 // row 0,7 : K/Q 고정 위치, 나머지는 랜덤
 // row 1,6 : 전부 랜덤
 void InitializeGame(GameState* gameState) {
+    // 타이머 초기회
+    gameState->whiteTime = 30; // 30초
+    gameState->blackTime = 30;
+
     // 전부 NULL 초기화
     for (int r = 0; r < BOARD_SIZE; r++) {
         for (int c = 0; c < BOARD_SIZE; c++) {
@@ -105,7 +109,7 @@ void PrintBoard(const GameState* gameState) {
     printf("    a    b    c    d    e    f    g    h\n\n");
 }
 
-// 이동 적용 (검증은 밖에서 끝난 상태)
+// 이동 적용 
 void ApplyMove(GameState* gameState,
     int startRow, int startColumn,
     int endRow, int endColumn) {

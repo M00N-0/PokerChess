@@ -15,27 +15,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.c">
+    <ClCompile Include="main.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Card.c">
+    <ClCompile Include="card.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Game.c">
+    <ClCompile Include="game.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Check.c">
+    <ClCompile Include="check.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Card.h">
+    <ClInclude Include="card.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Game.h">
+    <ClInclude Include="game.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Check.h">
+    <ClInclude Include="check.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
